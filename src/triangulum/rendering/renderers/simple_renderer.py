@@ -4,7 +4,6 @@
 #
 
 import asyncio
-import numpy as np
 
 from triangulum.rendering import gl
 from triangulum.rendering.entities.scene import Scene
@@ -22,7 +21,10 @@ class SimpleRenderer:
     def init(self):
         yield from self._gl_executor.init_gl_context()
 
-    def _render(self, scene: Scene, camera: Camera):
+    @staticmethod
+    def _render(scene: Scene, camera: Camera):
+        if scene.projector is not None:
+            scene.projector.render_shadow(scene)
         gl.clear_viewport()
         scene.render(camera)
         gl.glFinish()

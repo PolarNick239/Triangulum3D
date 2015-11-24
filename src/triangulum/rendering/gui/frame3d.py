@@ -274,9 +274,9 @@ if __name__ == '__main__':
 
         dog_mesh = PointsCloud(np.array([[1, -0.5, 0], [0, -0.5, 0], [0, -0.5, 1.5], [1, -0.5, 1.5]], np.float32),
                                uv=np.float32(aabb.rect_to_quad([[0, 0], [1, 1]])),
-                               faces=np.int32([[0, 1, 2], [0, 2, 3]]))
+                               faces=np.int32([[0, 1, 2], [0, 2, 3]]), name='USSR Cute Dog Poster')
         box1 = Box(xs=[0.2, 0.4], ys=[0.0, -0.4], zs=[0.6, 0.8],
-                   course=-33, roll=45)
+                   course=-20, roll=45)
         box2 = Box(xs=[0.2, 0.5], ys=[0.0, -0.3], zs=[0.1, 0.4],
                    course=15, pitch=10)
         texture = asyncio.get_event_loop().run_until_complete(frame._gl_executor.map(gl.create_image_texture, 'data/dog.jpg'))
@@ -289,4 +289,5 @@ if __name__ == '__main__':
         frame.scene.set_projector(projector)
     asyncio.get_event_loop().run_until_complete(frame.render_loop())
     asyncio.get_event_loop().run_until_complete(frame._gl_executor.map(texture.release))
+    asyncio.get_event_loop().run_until_complete(frame._gl_executor.map(projector.release))
     logger.debug('Exit!')

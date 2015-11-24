@@ -19,8 +19,8 @@ color_common = '''
     uniform mat4 mvp_mtx;
 
     V2F {
-        vec4 color;
         vec4 position;
+        vec4 color;
     } v2f;
 '''
 
@@ -50,8 +50,8 @@ textured_common = '''
     uniform mat4 mvp_mtx;
 
     V2F {
-        vec2 uv;
         vec4 position;
+        vec2 uv;
     } v2f;
 '''
 
@@ -86,28 +86,21 @@ ambient_light_fp = '''
 '''
 
 projector_light_fp = '''
-    uniform mat4 projector_mvp_mtx;
-
     const float ambient = 0.5;
 
     vec4 apply_light(vec4 color)
     {
-        vec4 projector_position = projector_mvp_mtx * v2f.position;
-        projector_position /= projector_position.w;
         vec4 color_with_light = color * ambient;
 
-        if (true) {
-            vec2 uv = projector_position.xy;
-            vec4 projector_color = getProjectorColor(uv);
-            color_with_light += projector_color * (1.0 - ambient);
-        }
+        vec4 projector_color = getProjectorColor(v2f.position);
+        color_with_light += projector_color * (1.0 - ambient);
         return color_with_light;
     }
 '''
 
 
 def get_shader(*, is_textured, projector_shader_fp=None):
-    light_fp = projector_shader_fp + projector_light_fp if projector_shader_fp else ambient_light_fp
+    light_fp = (projector_shader_fp + projector_light_fp) if projector_shader_fp else ambient_light_fp
     if is_textured:
         return gl.Shader(textured_common + textured_vp, textured_common + light_fp + textured_fp, 400, 400)
     else:
@@ -167,10 +160,14 @@ class PointsCloud(Renderable):
             mvp_mtx = camera.get_mvp_matrix()
             shader.uniform_matrix_f('mvp_mtx', mvp_mtx)
             if self._projector:
-                shader.uniform_matrix_f('projector_mvp_mtx', self._projector.get_mvp_matrix())
+                self._projector.uniforms(shader)
 
+            textures = {}
+            if self._projector:
+                self._projector.add_textures(textures)
             if self.uv is not None:
-                shader.bind_textures(tex=self.texture)
+                textures['tex'] = self.texture
+            shader.bind_textures(**textures)
 
             if self.faces is not None:
                 if not edges_mode:

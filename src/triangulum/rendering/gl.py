@@ -21,13 +21,13 @@ OpenGL.ERROR_CHECKING = True
 from OpenGL.GL.VERSION.GL_1_0 import GLenum, GLuint, glTexImage2D, glViewport, glEnable, glDisable, glFinish, glReadPixels, glGetTexImage
 from OpenGL.GL.VERSION.GL_1_0 import GL_UNSIGNED_BYTE, GL_SHORT, GL_INT, GL_UNSIGNED_INT, GL_FLOAT, GL_TRUE, GL_FALSE
 from OpenGL.GL.VERSION.GL_1_0 import glTexParameteri, glTexParameterf, glTexParameterfv, glTexParameteriv, glPixelStorei, glGetIntegerv
-from OpenGL.GL.VERSION.GL_1_0 import glLineWidth, glPointSize
+from OpenGL.GL.VERSION.GL_1_0 import glLineWidth, glPointSize, glGetIntegerv
 from OpenGL.GL.VERSION.GL_1_1 import GL_UNPACK_ROW_LENGTH, GL_UNPACK_SKIP_ROWS, GL_UNPACK_SKIP_PIXELS, GL_PACK_ALIGNMENT, GL_UNPACK_ALIGNMENT
 from OpenGL.GL.VERSION.GL_1_1 import glBindTexture, glGenTextures, glDeleteTextures, glTexSubImage2D, GL_TEXTURE_1D, GL_TEXTURE_2D
 from OpenGL.GL.VERSION.GL_1_1 import GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER
 from OpenGL.GL.VERSION.GL_1_1 import GL_TEXTURE_WRAP_T, GL_TEXTURE_WRAP_S, GL_TEXTURE_BORDER_COLOR
 from OpenGL.GL.VERSION.GL_1_1 import GL_LINEAR, GL_NEAREST, GL_RGBA, GL_RGBA8, GL_RED, GL_UNSIGNED_SHORT, GL_R, GL_RGB
-from OpenGL.GL.VERSION.GL_1_1 import GL_LINE_SMOOTH, GL_POINT_SMOOTH
+from OpenGL.GL.VERSION.GL_1_1 import GL_LINE_SMOOTH, GL_POINT_SMOOTH, GL_VIEWPORT
 from OpenGL.GL.VERSION.GL_1_1 import glClear, glClearColor, glClearDepth, GL_COLOR_BUFFER_BIT, GL_TRIANGLES, GL_LINES, GL_POINTS, GL_DEPTH_TEST, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT
 from OpenGL.GL.VERSION.GL_1_1 import glDrawElements, glDrawArrays, GL_TRIANGLE_FAN
 from OpenGL.GL.VERSION.GL_1_2 import glTexSubImage3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE, GL_BGR, GL_BGRA, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_BASE_LEVEL
@@ -267,8 +267,8 @@ NO_MIPMAPING = [(GL_TEXTURE_BASE_LEVEL, 0),
                 (GL_TEXTURE_MAX_LEVEL, 0)]
 
 
-def create_tex(w, h, internal_format, params=NEAREST_NEAREST):
-    tex = Texture2D((w, h))
+def create_tex(w, h, internal_format, params=NEAREST_NEAREST) -> Texture2D:
+    tex = Texture2D()
     with tex:
         tex.set_params(params)
         glTexStorage2D(tex.target, 1, internal_format, w, h)
@@ -289,6 +289,10 @@ def read_texture(texture, size, channels, gl_format, dtype):
 
 def read_color(texture, size):
     return read_texture(texture, size, 4, GL_BGRA, _np.uint8)
+
+
+def read_depth(texture, size):
+    return read_texture(texture, size, 1, GL_DEPTH_COMPONENT, _np.float32)
 
 
 class Framebuffer(_Bindable, GLReleasable):
@@ -334,7 +338,10 @@ def render_to_texture(framebuffer, color=None, depth=None, viewport_size=None):
 
         if viewport_size is not None:
             w, h = viewport_size
+            old_viewport_xywh = glGetIntegerv(GL_VIEWPORT)
             glViewport(0, 0, w, h)
+        else:
+            old_viewport_xywh = None
 
         assert glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE
 
@@ -343,6 +350,9 @@ def render_to_texture(framebuffer, color=None, depth=None, viewport_size=None):
         for i, _ in enumerate(color):
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+i, GL_TEXTURE_2D, NO_TEXTURE_HANDLE, 0)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, NO_TEXTURE_HANDLE, 0)
+
+        if old_viewport_xywh is not None:
+            glViewport(*old_viewport_xywh)
 
 
 def clear_viewport():
@@ -537,7 +547,11 @@ class Shader(_Bindable):
 
     def uniform_i(self, name, values):
         loc = glGetUniformLocation(self._handle, name)
-        assert loc >= 0
+        if loc < 0:
+            logger.warn('Uniform "{}" has location={}.'
+                        ' (The reason maybe in name mismatch or simply compiler optimization)'
+                        .format(name, loc))
+            return
         values = _np.ascontiguousarray(_np.atleast_2d(values), _np.int32)
         n, m = values.shape
         functions = [glProgramUniform1iv, glProgramUniform2iv, glProgramUniform3iv, glProgramUniform4iv]

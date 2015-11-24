@@ -25,6 +25,10 @@ class Scene(Renderable):
         ''':type : StripesProjector'''
 
     @property
+    def projector(self) -> StripesProjector:
+        return self._projector
+
+    @property
     def show_axis(self):
         return self._show_axis
 
