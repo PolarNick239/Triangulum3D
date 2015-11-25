@@ -3,12 +3,13 @@
 # All rights reserved.
 #
 
+import cv2
 import asyncio
 import logging
-from concurrent.futures import CancelledError
-
-import cyglfw3 as glfw
 import numpy as np
+import cyglfw3 as glfw
+from pathlib import Path
+from concurrent.futures import CancelledError
 
 from triangulum.rendering import gl
 from triangulum.rendering.context.glfw_context import create_window, GLFWContext
@@ -21,7 +22,7 @@ from triangulum.rendering.entities.stripes_projector import StripesProjector
 from triangulum.rendering.gl import RenderingAsyncExecutor
 from triangulum.rendering.gui.utils.double_click import DoubleClickHandler
 from triangulum.rendering.gui.utils.fps_limiter import FPSLimiter
-from triangulum.rendering.renderers.simple_renderer import SimpleRenderer
+from triangulum.rendering.renderers.simple_renderer import SimpleRenderer, ImageRenderer
 from triangulum.utils import math
 from triangulum.utils import aabb
 from triangulum.utils import support
@@ -49,7 +50,7 @@ class Frame3D:
 
         self._initialized = False
 
-        self._camera = Camera(aspect=height / width, pitch=360-45, distance=10)
+        self._camera = Camera(aspect=height / width, course=-180)
         self._fps_limiter = FPSLimiter(fps_limit)
         self._double_clicks = DoubleClickHandler()
 
@@ -165,6 +166,28 @@ class Frame3D:
         else:
             logger.debug('Double click on empty pixel!')
 
+    @asyncio.coroutine
+    def _make_screenshot_and_save(self):
+        w, h = 2048, int(2048 * self._camera.aspect)
+        logger.info('Making screenshot... ({}x{})'.format(w, h))
+
+        renderer = ImageRenderer(self._gl_executor)
+        color, depth = yield from renderer.render(self.scene, self._camera, (w, h))
+
+        filename = 'screenshot'
+        next_id = 2
+        while Path(filename).exists():
+            filename = 'screenshot{}'.format(next_id)
+            next_id += 1
+
+        color_name, depth_name = filename + '.png', filename + '_depth.png'
+        logger.info('Saving screenshot to {}, {}...'.format(color_name, depth_name))
+        yield from self._io_async_executor.map(cv2.imwrite, color_name, np.uint8(color))
+        yield from self._io_async_executor.map(cv2.imwrite, depth_name, np.uint8(
+            255 * (depth - depth.min()) / (depth.max() - depth.min())))
+
+        yield from renderer.release()
+
     def _on_mouse_move(self, window, x, y):
         y = self._height - y
         mouse_pos = np.array([x, y])
@@ -206,7 +229,9 @@ class Frame3D:
             if key == glfw.KEY_ESCAPE:  # Close window
                 glfw.SetWindowShouldClose(self._window, True)
                 self.update()
-
+            if key == glfw.KEY_S:  # Render current frustum and save as screenshot to screenshot.png and screenshot_depth.png
+                self._to_do.append(self._make_screenshot_and_save())
+                self.update()
             self._keyboard_buttons_down[key] = mods
         elif action == glfw.RELEASE:
             if key in self._keyboard_buttons_down:
