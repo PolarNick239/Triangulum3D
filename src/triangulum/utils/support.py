@@ -5,7 +5,7 @@
 
 import asyncio
 import logging
-
+from itertools import chain
 from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger(__name__)
@@ -32,6 +32,56 @@ class AsyncExecutor:
             self.executor.shutdown(wait=wait)
             self.executor = None
             return True
+
+
+def str_dict(d: dict):
+    """
+    >>> str_dict({1: 1, "1": "1"})
+    "{'1': '1', 1: 1}"
+    >>> str_dict({(2, 3): "1", 1: "2", 2: "3", "a": "4", "b": {"1": 1}})
+    "{'a': '4', 'b': {'1': 1}, (2, 3): '1', 1: '2', 2: '3'}"
+    """
+    def to_str(x):
+        if isinstance(x, str):
+            return "'" + x + "'"
+        else:
+            return str(x)
+
+    result = "{"
+    for i, key in enumerate(sorted(d.keys(), key=to_str)):
+        value = d[key]
+
+        if isinstance(value, dict):
+            value = str_dict(value)
+        else:
+            value = to_str(value)
+
+        if i > 0:
+            result += ", "
+        result += "{}: {}".format(to_str(key), value)
+    return result + "}"
+
+
+def deep_merge(base_dict: dict, new_dict: dict):
+    """
+    >>> str_dict(deep_merge({1: "old", 2: "only_old"}, {1: "new", 3: "only_new"}))
+    "{1: 'new', 2: 'only_old', 3: 'only_new'}"
+    >>> str_dict(deep_merge({"inner": {1: "old", 2: "only_old"}}, {"inner": {1: "new", 3: "only_new"}}))
+    "{'inner': {1: 'new', 2: 'only_old', 3: 'only_new'}}"
+    >>> result = deep_merge({1: 0, 2: 0, 3: 239, 'd': {"d1": 1, "d2": 2}}, {1: 1, 2: -1, 239: 2012, 'd': {"d1": 3, "d3": 4}})
+    >>> str_dict(result)
+    "{'d': {'d1': 3, 'd2': 2, 'd3': 4}, 1: 1, 2: -1, 239: 2012, 3: 239}"
+    """
+    result = {}
+    for key in set(chain(base_dict.keys(), new_dict.keys())):
+        if key in new_dict:
+            value = new_dict[key]
+        else:
+            value = base_dict[key]
+        if isinstance(value, dict) and key in base_dict and key in new_dict:
+            value = deep_merge(base_dict[key], new_dict[key])
+        result[key] = value
+    return result
 
 
 def make_exc_info(exception):
