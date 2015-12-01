@@ -118,3 +118,12 @@ def perspective_matrix(aspect, near, far, fov_h=45):
     P = transformations.clip_matrix(left, right, bottom, top, near, far, perspective=True)
     P = np.dot(P, scale_matrix([1, 1, -1]))
     return np.float32(-P)
+
+
+def create_frustum_points(rt_mtx, k_mtx, ratio, frustums_depth=1.0):
+    rt_inv = np.linalg.inv(np.vstack([rt_mtx, [0, 0, 0, 1]]))
+    camera_corners = homo_translate(np.linalg.inv(k_mtx), aabb.rect_to_quad([[0, 0], [1.0, 1.0 * ratio]]))
+    corners = np.hstack([camera_corners, [[1]] * 4]) * frustums_depth
+    frustum_points = homo_translate(rt_inv, np.vstack([[[0, 0, 0]], corners]))
+    return frustum_points
+

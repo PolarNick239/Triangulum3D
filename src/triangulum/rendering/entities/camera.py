@@ -129,10 +129,6 @@ class Camera(Renderable):
         return np.dot(P, MV)
 
     def create_frustum_points(self, frustums_depth=1.0):
-        rt_inv = np.linalg.inv(self.get_mv_matrix())
-        p = self.get_p_matrix()[:-1, :-1]
-        camera_corners = math.homo_translate(np.linalg.inv(p), aabb.rect_to_quad([[-1.0, -1.0 * self.aspect],
-                                                                                  [1.0, 1.0 * self.aspect]]))
-        corners = np.hstack([camera_corners, [[-1]] * 4]) * frustums_depth
-        frustum_points = math.homo_translate(rt_inv, np.vstack([[[0, 0, 0]], corners]))
-        return frustum_points
+        rt_mtx = self.get_mv_matrix()
+        k_mtx = self.get_p_matrix()[:-1, :-1]
+        return math.create_frustum_points(rt_mtx, k_mtx, self.aspect, frustums_depth)
