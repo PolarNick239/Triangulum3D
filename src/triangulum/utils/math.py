@@ -5,7 +5,7 @@
 
 import numpy as np
 
-from triangulum.utils import support
+from triangulum.utils import aabb
 from triangulum.third_party import transformations
 
 
@@ -126,4 +126,55 @@ def create_frustum_points(rt_mtx, k_mtx, ratio, frustums_depth=1.0):
     corners = np.hstack([camera_corners, [[1]] * 4]) * frustums_depth
     frustum_points = homo_translate(rt_inv, np.vstack([[[0, 0, 0]], corners]))
     return frustum_points
+
+
+def create_points_in_frustum(ps, frustum_points, ratio=1.0):
+    camera, ll, lr, ur, ul = frustum_points
+    result = ll + (lr - ll) * ps[:, 0].reshape(-1, 1) + (ul - ll) * (ps[:, 1].reshape(-1, 1) / ratio)
+    return result
+
+
+def vdot(a, b):
+    """
+    >>> vdot([1, 0, 0], [0, 1, 0])
+    array([0, 0, 1])
+
+    >>> vdot([1, 0, 0], [0, 0, 1])
+    array([ 0, -1,  0])
+
+    >>> vdot([1, 1, 0], [0, 0, 1])
+    array([ 1, -1,  0])
+    """
+    return np.array([a[1] * b[2] - a[2] * b[1],
+                     a[2] * b[0] - a[0] * b[2],
+                     a[0] * b[1] - a[1] * b[0]])
+
+
+def plane_by_points(points):
+    """
+    >>> plane_by_points([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    array([ 1,  1,  1, -1])
+    """
+    a, b, c = np.array(points)
+    ab, ac = b - a, c - a
+    n = vdot(ab, ac)
+    return np.hstack([n, -np.dot(n, points[0])])
+
+
+def intersect_plane_line(plane, line_v, line_p):
+    """
+    >>> intersect_plane_line([1, 0, 0, -1], [1, 1, 1], [-1, -1, -1])
+    array([ 1.,  1.,  1.])
+
+    >>> intersect_plane_line([0, 1, 0, -1], [1, 1, 1], [-1, 0, -1])
+    array([ 0.,  1.,  0.])
+
+    >>> intersect_plane_line([0, 0, 10, -10], [1, 1, 2], [-1, 0, -1])
+    array([ 0.,  1.,  1.])
+    """
+    assert len(plane) == 4
+    assert len(line_v) == len(line_p) == 3
+    t = - (np.dot(plane, np.hstack([line_p, 1]))
+           / np.dot(plane[:3], line_v))
+    return np.array(line_v) * t + line_p
 
