@@ -121,9 +121,10 @@ def perspective_matrix(aspect, near, far, fov_h=45):
 
 
 def create_frustum_points(rt_mtx, k_mtx, ratio, frustums_depth=1.0):
-    rt_inv = np.linalg.inv(np.vstack([rt_mtx, [0, 0, 0, 1]]))
-    camera_corners = homo_translate(np.linalg.inv(k_mtx), aabb.rect_to_quad([[0, 0], [1.0, 1.0 * ratio]]))
-    corners = np.hstack([camera_corners, [[1]] * 4]) * frustums_depth
+    rt_inv = np.linalg.inv(rt_mtx)
+    camera_corners = homo_translate(np.linalg.inv(k_mtx), aabb.rect_to_quad([[-1.0, -1.0 * ratio],
+                                                                             [1.0, 1.0 * ratio]]))
+    corners = np.hstack([camera_corners, [[-1]] * 4]) * frustums_depth
     frustum_points = homo_translate(rt_inv, np.vstack([[[0, 0, 0]], corners]))
     return frustum_points
 
