@@ -3,22 +3,30 @@
 # All rights reserved.
 #
 
+import cv2
 import yaml
+import asyncio
 import logging
 import pkg_resources
 from pathlib import Path
 from unittest import TestCase
 
+from triangulum.utils import support
 from triangulum.utils.support import str_dict, deep_merge
+from triangulum.rendering.gl import RenderingAsyncExecutor
 
 
 logger = logging.getLogger(__name__)
 
 
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(relativeCreated)d [%(threadName)s]\t%(name)s [%(levelname)s]:\t %(message)s')
+
+
 resources_dir_path = Path(pkg_resources.get_provider('triangulum_test.resources').get_resource_filename(__name__, '.'))
 
 _default_test_config = {
-    "debug_output_dir": None,
+    'debug_output_dir': None,
 }
 
 
@@ -28,7 +36,7 @@ def load_config():
         with open(config_path) as f:
             user_config = yaml.load(f)
             config = deep_merge(_default_test_config, user_config)
-            logger.debuf("Using test config:\n{}".format(str_dict(config)))
+            logger.debug("Using test config:\n{}".format(str_dict(config)))
     except FileNotFoundError:
         config = _default_test_config
         logger.debug("No config file found at '{}'.".format(config_path))
@@ -42,5 +50,29 @@ class TestBase(TestCase):
         super().setUp()
         self.config = load_config()
 
+        self.gl_executor = None
+        self.releasables = []
+
+    def get_gl_executor(self):
+        if self.gl_executor is None:
+            self.gl_executor = RenderingAsyncExecutor()
+        return self.gl_executor
+
+    def gl_executor_map(self, foo, *args):
+        gl_executor = self.get_gl_executor()
+        result = asyncio.get_event_loop().run_until_complete(gl_executor.map(foo, *args))
+        return result
+
+    def register_releasable(self, releasable):
+        self.releasables.append(releasable)
+
+    def dump_debug_img(self, path, img):
+        if self.config['debug_output_dir'] is not None:
+            path = Path(self.config['debug_output_dir']) / self.__class__.__name__ / path
+            support.silent_make_dir(path.parent)
+            cv2.imwrite(str(path), img)
+
     def tearDown(self):
         super().tearDown()
+        for releasable in self.releasables:
+            self.gl_executor_map(releasable.release)

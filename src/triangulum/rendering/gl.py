@@ -87,15 +87,18 @@ class RenderingAsyncExecutor(AsyncExecutor):
     def __init__(self, gl_context: GLContext=None, loop=None):
         super().__init__(1, loop or asyncio.get_event_loop())
         self._gl_context = gl_context
+        self._initialized = False
 
     def _init_gl_context(self):
         if self._gl_context is None:
             self._gl_context = GLContextImpl()
         _gl_thread_local.IS_GL_THREAD = True
+        self._initialized = True
 
     @asyncio.coroutine
     def init_gl_context(self):
-        yield from super(RenderingAsyncExecutor, self).map(self._init_gl_context)
+        if not self._initialized:
+            yield from super(RenderingAsyncExecutor, self).map(self._init_gl_context)
 
     def _with_activated_context(self, fn, *args):
         with self._gl_context:
@@ -103,6 +106,7 @@ class RenderingAsyncExecutor(AsyncExecutor):
 
     @asyncio.coroutine
     def map(self, fn, *args):
+        yield from self.init_gl_context()
         return (yield from super(RenderingAsyncExecutor, self).map(self._with_activated_context, fn, *args))
 
 
@@ -591,11 +595,12 @@ class Shader(_Bindable):
 
 
 def create_image_texture(filepath):
-    img = cv2.imread(filepath)[::-1]
+    img = cv2.imread(filepath)
+    assert img is not None
     h, w = img.shape[:2]
     texture = Texture2D()
     with texture:
         texture.set_params(LINEAR_LINEAR + CLAMP_TO_EDGE + NO_MIPMAPING + [(GL_TEXTURE_BORDER_COLOR, [0.0, 0.0, 0.0, 0.0])])
         with configure_pixel_store([(GL_UNPACK_ALIGNMENT, 1)]):
-            glTexImage2D(texture.target, 0, GL_RGBA, w, h, 0, {3: GL_BGR, 4: GL_BGRA}[img.shape[2]], GL_UNSIGNED_BYTE, img)
+            glTexImage2D(texture.target, 0, GL_RGBA, w, h, 0, {3: GL_BGR, 4: GL_BGRA}[img.shape[2]], GL_UNSIGNED_BYTE, img[::-1])
     return texture

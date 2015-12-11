@@ -62,7 +62,7 @@ class Frame3D:
 
         self._to_do = []
 
-        self.scene = Scene()
+        self.scene = Scene(show_axis=True)
 
     @asyncio.coroutine
     def init(self):
@@ -183,8 +183,7 @@ class Frame3D:
         color_name, depth_name = filename + '.png', filename + '_depth.png'
         logger.info('Saving screenshot to {}, {}...'.format(color_name, depth_name))
         yield from self._io_async_executor.map(cv2.imwrite, color_name, np.uint8(color))
-        yield from self._io_async_executor.map(cv2.imwrite, depth_name, np.uint8(
-            255 * (depth - depth.min()) / (depth.max() - depth.min())))
+        yield from self._io_async_executor.map(cv2.imwrite, depth_name, support.array_to_grayscale(depth))
 
         yield from renderer.release()
 
@@ -295,8 +294,6 @@ if __name__ == '__main__':
         points = points_cloud.load_ply(points_path)
         frame.add_points_cloud(points)
     if len(sys.argv[1:]) == 0:
-        asyncio.get_event_loop().run_until_complete(frame._gl_executor.init_gl_context())
-
         dog_mesh = PointsCloud(np.array([[1, -0.5, 0], [0, -0.5, 0], [0, -0.5, 1.5], [1, -0.5, 1.5]], np.float32),
                                uv=np.float32(aabb.rect_to_quad([[0, 0], [1, 1]])),
                                faces=np.int32([[0, 1, 2], [0, 2, 3]]), name='USSR Cute Dog Poster')
@@ -312,7 +309,11 @@ if __name__ == '__main__':
         frame.add_points_cloud(box2)
         projector = StripesProjector()
         frame.scene.set_projector(projector)
-    asyncio.get_event_loop().run_until_complete(frame.render_loop())
-    asyncio.get_event_loop().run_until_complete(frame._gl_executor.map(texture.release))
-    asyncio.get_event_loop().run_until_complete(frame._gl_executor.map(projector.release))
+
+        asyncio.get_event_loop().run_until_complete(frame.render_loop())
+
+        asyncio.get_event_loop().run_until_complete(frame._gl_executor.map(texture.release))
+        asyncio.get_event_loop().run_until_complete(frame._gl_executor.map(projector.release))
+    else:
+        asyncio.get_event_loop().run_until_complete(frame.render_loop())
     logger.debug('Exit!')

@@ -5,6 +5,8 @@
 
 import asyncio
 import logging
+import numpy as np
+from pathlib import Path
 from itertools import chain
 from concurrent.futures import ThreadPoolExecutor
 
@@ -102,3 +104,18 @@ def wrap_exc(coro_or_future, logger_for_error=None, future_description: str=None
     future = asyncio.async(coro_or_future)
     future.add_done_callback(check_for_exceptions)
     return future
+
+
+def silent_make_dir(path: Path):
+    try:
+        path.mkdir(parents=True)  # TODO: migrate to python3.5 (it has exist_ok param)
+    except FileExistsError:
+        pass
+
+
+def array_to_grayscale(img):
+    assert len(img.shape) == 2
+    values_range = (img.max() - img.min())
+    if values_range == 0:
+        values_range = 1
+    return np.uint8(255 * (img - img.min()) / values_range)

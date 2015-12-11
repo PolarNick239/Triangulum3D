@@ -46,8 +46,6 @@ class ImageRenderer:
     @asyncio.coroutine
     def _update_resources(self, viewport_size_wh):
         if viewport_size_wh != self._initialized_wh:
-            yield from self._gl_executor.init_gl_context()
-
             def update_resources():
                 if self._framebuffer is None:
                     self._framebuffer = gl.Framebuffer()

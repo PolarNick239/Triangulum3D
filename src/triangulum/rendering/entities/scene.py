@@ -13,7 +13,7 @@ from triangulum.rendering.entities.stripes_projector import StripesProjector
 
 class Scene(Renderable):
 
-    def __init__(self, show_axis=True, edges_mode=False):
+    def __init__(self, show_axis=False, edges_mode=False):
         self._show_axis = show_axis
         self._edges_mode = edges_mode
 
@@ -59,7 +59,8 @@ class Scene(Renderable):
             self._axis_vectors.render(camera, edges_mode=edges_mode)
         for renderable in self._renderables:
             renderable.render(camera, edges_mode=edges_mode)
-        self._projector.render(camera, edges_mode=edges_mode)
+        if self._projector is not None:
+            self._projector.render(camera, edges_mode=edges_mode)
 
     @staticmethod
     def _create_axis_vectors() -> PointsCloud:
