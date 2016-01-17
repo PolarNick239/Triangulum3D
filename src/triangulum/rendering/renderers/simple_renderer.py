@@ -34,7 +34,7 @@ class SimpleRenderer:
 
 class ImageRenderer:
 
-    def __init__(self, gl_executor: gl.RenderingAsyncExecutor=None):
+    def __init__(self, gl_executor: gl.RenderingAsyncExecutor):
         self._gl_executor = gl_executor or gl.RenderingAsyncExecutor()
 
         self._framebuffer = None
@@ -52,7 +52,7 @@ class ImageRenderer:
                 w, h = viewport_size_wh
                 gl.release([self._color_buffer, self._depth_buffer])
                 self._color_buffer = gl.create_tex(w, h, gl.GL_RGBA8)
-                self._depth_buffer = gl.create_tex(w, h, gl.GL_DEPTH_COMPONENT24)
+                self._depth_buffer = gl.create_tex(w, h, gl.GL_DEPTH_COMPONENT32)
             yield from self._gl_executor.map(update_resources)
             self._initialized_wh = viewport_size_wh
 

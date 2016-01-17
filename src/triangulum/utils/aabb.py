@@ -21,7 +21,7 @@ def intersection(a, b):
     >>> a = np.int32( [[0 , 0] , [200, 100]] )
     >>> intersection(a, a + 50)
     array([[ 50,  50],
-           [200, 100]])
+           [200, 100]], dtype=int32)
     >>> intersection(a, a + 500) is None
     True
     """

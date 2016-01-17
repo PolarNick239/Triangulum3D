@@ -32,7 +32,7 @@ from OpenGL.GL.VERSION.GL_1_1 import glClear, glClearColor, glClearDepth, GL_COL
 from OpenGL.GL.VERSION.GL_1_1 import glDrawElements, glDrawArrays, GL_TRIANGLE_FAN
 from OpenGL.GL.VERSION.GL_1_2 import glTexSubImage3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE, GL_BGR, GL_BGRA, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_BASE_LEVEL
 from OpenGL.GL.VERSION.GL_1_3 import glActiveTexture, GL_TEXTURE0, GL_CLAMP_TO_BORDER
-from OpenGL.GL.VERSION.GL_1_4 import GL_DEPTH_COMPONENT24
+from OpenGL.GL.VERSION.GL_1_4 import GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32
 from OpenGL.GL.VERSION.GL_1_5 import glGenBuffers, glDeleteBuffers, glBindBuffer, glMapBuffer, glUnmapBuffer, GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER
 from OpenGL.GL.VERSION.GL_1_5 import GL_STATIC_DRAW, glBufferData, GL_WRITE_ONLY, GL_STREAM_DRAW
 from OpenGL.GL.VERSION.GL_2_0 import glCreateProgram, glCreateShader, glUseProgram, glShaderSource

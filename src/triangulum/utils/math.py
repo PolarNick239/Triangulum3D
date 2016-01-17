@@ -130,8 +130,8 @@ def create_frustum_points(rt_mtx, k_mtx, ratio, frustums_depth=1.0):
 
 
 def create_points_in_frustum(ps, frustum_points, ratio=1.0):
-    camera, ll, lr, ur, ul = frustum_points
-    result = ll + (lr - ll) * ps[:, 0].reshape(-1, 1) + (ul - ll) * (ps[:, 1].reshape(-1, 1) / ratio)
+    camera, ur, ul, ll, lr = frustum_points
+    result = ul + (ur - ul) * ps[:, 0].reshape(-1, 1) + (ll - ul) * (ps[:, 1].reshape(-1, 1) / ratio)
     return result
 
 

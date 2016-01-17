@@ -10,7 +10,7 @@ from triangulum.rendering.entities.abstract import Renderable
 from triangulum.rendering.entities.camera import Camera
 
 color_fp = '''
-    const float EPSILON = 0.0002;
+    const float EPSILON = 0.0003;
     uniform mat4 projector_mvp_mtx;
     uniform sampler2D projector_depth_tex;
 
@@ -34,7 +34,7 @@ color_fp = '''
             int stripe_id = int(floor(uv.x * {stripes_number})) % {stripes_types_number};
             return projector_stripes_colours[stripe_id];
         }} else {{
-            return vec4(0.0);
+            return vec4(vec3(0.0), 1.0);
         }}
     }}
 '''
@@ -63,6 +63,14 @@ class StripesProjector(Camera):
 
         self._rendering_depth_map = False
 
+    @property
+    def stripes_number(self):
+        return self.stripes_number
+
+    @stripes_number.setter
+    def stripes_number(self, stripes_number):
+        self._stripes_number = stripes_number
+
     def get_shader_code(self):
         return color_fp.format(stripes_types_number=len(self._stripes_colours),
                                stripes_number=self._stripes_number,
@@ -70,10 +78,11 @@ class StripesProjector(Camera):
                                                            for colour in self._stripes_colours]))
 
     def _init(self):
-        w, h = self._depth_map_wh
-        self._framebuffer = gl.Framebuffer()
-        self._depth_buffer = gl.create_tex(w, h, gl.GL_DEPTH_COMPONENT24)
-        self._initialized = True
+        if not self._initialized:
+            w, h = self._depth_map_wh
+            self._framebuffer = gl.Framebuffer()
+            self._depth_buffer = gl.create_tex(w, h, gl.GL_DEPTH_COMPONENT32)
+            self._initialized = True
 
     def release(self):
         if self._initialized:
@@ -97,8 +106,7 @@ class StripesProjector(Camera):
         textures['projector_depth_tex'] = self._depth_buffer
 
     def render_shadow(self, renderable: Renderable):
-        if not self._initialized:
-            self._init()
+        self._init()
         self._rendering_depth_map = True
         with gl.render_to_texture(self._framebuffer, depth=self._depth_buffer,
                                   viewport_size=self._depth_map_wh):

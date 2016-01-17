@@ -66,9 +66,15 @@ class TestBase(TestCase):
     def register_releasable(self, releasable):
         self.releasables.append(releasable)
 
+    def with_debug_output(self):
+        return self.config['debug_output_dir'] is not None
+
+    def debug_dir(self):
+        return Path(self.config['debug_output_dir']) / self.__class__.__name__
+
     def dump_debug_img(self, path, img):
-        if self.config['debug_output_dir'] is not None:
-            path = Path(self.config['debug_output_dir']) / self.__class__.__name__ / path
+        if self.with_debug_output():
+            path = self.debug_dir() / path
             support.silent_make_dir(path.parent)
             cv2.imwrite(str(path), img)
 

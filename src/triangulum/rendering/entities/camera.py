@@ -7,7 +7,6 @@ import numpy as np
 from enum import Enum
 
 from triangulum.utils import math
-from triangulum.utils import aabb
 from triangulum.rendering.entities.abstract import Renderable
 from triangulum.rendering.entities.points_cloud import PointsCloud
 
@@ -106,8 +105,11 @@ class Camera(Renderable):
     def set_aspect(self, aspect):
         self.aspect = aspect
 
+    def get_position(self):
+        return self.target - math.normalize(self._get_camera_direction()) * self.distance
+
     def get_mv_matrix(self):
-        camera_position = self.target - math.normalize(self._get_camera_direction()) * self.distance
+        camera_position = self.get_position()
         return math.look_at_matrix(camera_position, self.target,
                                    up=[0, 0, 1], right=self._get_direction(self.course + 90))
 
