@@ -12,6 +12,7 @@ setup(
         'numpy>=1.9.1',
         'PyOpenGL>=3.1.0',
         'PyYAML>=3.11',
+        'pyopencl>=2015.2.3',
     ],
     tests_require=[
         'testfixtures>=4.1.2',
