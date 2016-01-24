@@ -78,6 +78,13 @@ class TestBase(TestCase):
             support.silent_make_dir(path.parent)
             cv2.imwrite(str(path), img)
 
+    def dump_debug_matrix_by_hue(self, path, mat):
+        if self.with_debug_output():
+            path = self.debug_dir() / path
+            support.silent_make_dir(path.parent)
+            img = support.array_to_rgb_by_hue(mat)[:, :, ::-1]
+            cv2.imwrite(str(path), img)
+
     def tearDown(self):
         super().tearDown()
         for releasable in self.releasables:

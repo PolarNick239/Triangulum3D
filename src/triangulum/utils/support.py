@@ -5,10 +5,13 @@
 
 import asyncio
 import logging
+
 import numpy as np
 from pathlib import Path
 from itertools import chain
 from concurrent.futures import ThreadPoolExecutor
+
+from triangulum.utils.colorsys_np import hsv_to_rgb
 
 logger = logging.getLogger(__name__)
 
@@ -119,3 +122,27 @@ def array_to_grayscale(img):
     if values_range == 0:
         values_range = 1
     return np.uint8(255 * (img - img.min()) / values_range)
+
+
+def array_to_rgb_by_hue(img):
+    """
+    >>> array_to_rgb_by_hue(np.array([[10, 15, 20, 10]]))
+    array([[[ 150.,   75.,   75.],
+            [  75.,  150.,   75.],
+            [  75.,   75.,  150.],
+            [ 150.,   75.,   75.]]])
+    """
+    assert len(img.shape) == 2
+
+    delta = img.max() - img.min()
+    if delta > 0:
+        hue = (img - img.min()) / delta
+    else:
+        hue = img - img.min()
+    hue *= 2 / 3
+
+    saturation = np.full(hue.shape, 0.5, hue.dtype)
+    value = np.full(hue.shape, 150, hue.dtype)
+    hsv = np.dstack([hue, saturation, value])
+    rgb = hsv_to_rgb(hsv)
+    return rgb
