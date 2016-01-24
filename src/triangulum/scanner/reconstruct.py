@@ -8,24 +8,27 @@ import numpy as np
 
 from triangulum.utils import math
 from triangulum.rendering.entities.camera import Camera
+from triangulum.scanner.central_line_extraction import CentralLineExtractionProcessor
 
 logger = logging.getLogger(__name__)
 
 
 class ReconstructionBuilder:
 
-    def __init__(self):
+    def __init__(self, line_extraction_processor: CentralLineExtractionProcessor=None):
+        self._line_extraction_processor = line_extraction_processor or CentralLineExtractionProcessor()
+
         self._max_projector_lod = -1
 
         self._wh = None
         self._stripe_ids_img = None
-        self._mask = None
+        self._is_ok_mask = None
 
     def _init(self, w, h):
-        assert self._stripe_ids_img is None and self._mask is None and self._wh is None
+        assert self._stripe_ids_img is None and self._is_ok_mask is None and self._wh is None
         self._wh = (w, h)
         self._stripe_ids_img = np.zeros((h, w), np.int32)
-        self._mask = np.ones((h, w), np.bool)
+        self._is_ok_mask = np.ones((h, w), np.bool)
 
     def process_observation(self, projector_lod, img):
         assert self._max_projector_lod + 1 == projector_lod
@@ -38,10 +41,10 @@ class ReconstructionBuilder:
             assert (w, h) == self._wh
 
         is_green, is_red, bad_mask = self._classify(img)
-        self._mask[bad_mask] = 0
+        self._is_ok_mask[bad_mask] = 0
         self._stripe_ids_img = self._stripe_ids_img * 2 + is_green
         logger.debug('After projector lod={}: {}% points recognized.'
-                     .format(projector_lod, 100 * self._mask.sum() // np.prod(self._mask.shape)))
+                     .format(projector_lod, 100 * self._is_ok_mask.sum() // np.prod(self._is_ok_mask.shape)))
 
     @staticmethod
     def _classify(img):
@@ -69,11 +72,11 @@ class ReconstructionBuilder:
         camera_ps3d = self._create_pixels_3d(camera, w, h)
         projector_ps3d = self._create_pixels_3d(projector_camera, 2 ** self._max_projector_lod, 2)
 
-        # TODO: implement local-maximum suppression (only central line of stripe should be intersected)
-        # implement as OpenCL over stripe_ids_img
+        is_central_line_pixel = self._line_extraction_processor.process(self._stripe_ids_img)
+        self._is_ok_mask = self._is_ok_mask & is_central_line_pixel
 
         points_3d = []
-        y_ids, x_ids = np.nonzero(self._mask)
+        y_ids, x_ids = np.nonzero(self._is_ok_mask)
         for y_id, x_id in zip(y_ids, x_ids):  # TODO: this is bottle-neck
             ray = math.normalize(camera_ps3d[x_id, y_id] - camera.get_position())
             stripe_id = self._stripe_ids_img[y_id, x_id]

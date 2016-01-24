@@ -17,12 +17,17 @@ class CentralLineExtractionProcessor:
      The main idea is to calculate distance to stripe border,
      than apply non-maximum suppression on distance image (like in Canny edge detector)."""
 
-    def __init__(self, cl_context: cl.Context = None, kernels_cache_dir=None):
+    def __init__(self, cl_context: cl.Context = None, kernels_cache_dir=None,
+                 debug_enabled=False):
         self._context = cl_context
         self._kernels_cache_dir = kernels_cache_dir
 
         self._kernel_source = None
         self._compiled_params = None
+
+        self._debug_last_values = {'is_edge_pixel': None,
+                                   'distance': None,
+                                   'is_maximum': None} if debug_enabled else None
 
     def _load_kernel_source(self):
         if self._kernel_source is not None:
@@ -73,6 +78,9 @@ class CentralLineExtractionProcessor:
                                             type_cl.data, is_edge_pixel_cl.data, distance_cl.data, changed.data,
                                             global_offset=(1, 1))
 
+        if self._debug_last_values is not None:
+            self._debug_last_values['is_edge_pixel'] = is_edge_pixel_cl.get()[1:-1, 1:-1]
+
         sobel_dx = np.array([[-1, 0, 1],
                              [-2, 0, 2],
                              [-1, 0, 1]], np.float32)
@@ -90,8 +98,14 @@ class CentralLineExtractionProcessor:
                                distance_cl.data, sobel_kernel_cl.data, distance_dxy_cl.data,
                                global_offset=(2, 2))
 
+        if self._debug_last_values is not None:
+            self._debug_last_values['distance'] = distance_cl.get()[1:-1, 1:-1]
+
         self._program.non_maximum_suppression(queue, (w - 2, h - 2), None,
                                               distance_cl.data, distance_dxy_cl.data, is_maximum_cl.data,
                                               global_offset=(2, 2))
         is_maximum = np.array(is_maximum_cl.get(), np.bool)
+
+        if self._debug_last_values is not None:
+            self._debug_last_values['is_maximum'] = is_maximum[1:-1, 1:-1]
         return is_maximum[1:-1, 1:-1]

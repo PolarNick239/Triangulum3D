@@ -4,6 +4,7 @@
 #
 
 import asyncio
+from pathlib import Path
 
 from triangulum.utils import ply
 from triangulum.utils import support
@@ -14,6 +15,7 @@ from triangulum.rendering.entities.camera import Camera
 from triangulum.scanner.reconstruct import ReconstructionBuilder
 from triangulum.rendering.renderers.simple_renderer import ImageRenderer
 from triangulum.rendering.entities.stripes_projector import StripesProjector
+from triangulum.scanner.central_line_extraction import CentralLineExtractionProcessor
 
 
 class ReconstructionBuilderTest(TestBase):
@@ -33,14 +35,15 @@ class ReconstructionBuilderTest(TestBase):
         scene = Scene()
         scene.add_renderable(Box([-1, 1], [-0.5, 0.5], [0, 1]))
         camera = Camera(course=40)
-        viewport = (200, 140)
+        viewport = (500, 300)
         projector_lods = 8
 
         color, depth = self.render(scene, camera, viewport)
         self.dump_debug_img("scene_color.png", color)
         self.dump_debug_img("scene_depth.png", support.array_to_grayscale(depth))
 
-        reconstructor = ReconstructionBuilder()
+        central_line_processor = CentralLineExtractionProcessor(debug_enabled=self.with_debug_output())
+        reconstructor = ReconstructionBuilder(line_extraction_processor=central_line_processor)
         projector = StripesProjector(course=70)
         self.register_releasable(projector)
         for i in range(projector_lods):
@@ -55,5 +58,10 @@ class ReconstructionBuilderTest(TestBase):
         points_3d = reconstructor.build_point_cloud(projector, camera)
 
         if self.with_debug_output():
+            subdir = Path('central_line')
+            self.dump_debug_matrix_by_hue(subdir / 'is_edge_pixel.png', central_line_processor._debug_last_values['is_edge_pixel'])
+            self.dump_debug_matrix_by_hue(subdir / 'distance.png', central_line_processor._debug_last_values['distance'])
+            self.dump_debug_matrix_by_hue(subdir / 'is_maximum.png', central_line_processor._debug_last_values['is_maximum'])
+
             ply.write_to_ply(self.debug_dir() / 'points.ply', points_3d)
         # TODO: implement result check
