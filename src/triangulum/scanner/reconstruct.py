@@ -50,7 +50,7 @@ class ReconstructionBuilder:
     def _classify(img):
         h, w = img.shape[:2]
         is_green = img[:, :, 1] > 128
-        is_red = img[:, :, 2] > 128
+        is_red = img[:, :, 0] > 128
         is_green, is_red = np.logical_and(is_green, ~is_red), np.logical_and(is_red, ~is_green)
         bad = np.logical_and(~is_green, ~is_red)
         return is_green, is_red, bad

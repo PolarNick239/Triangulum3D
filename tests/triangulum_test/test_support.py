@@ -3,10 +3,10 @@
 # All rights reserved.
 #
 
-import cv2
 import yaml
 import asyncio
 import logging
+import numpy as np
 import pkg_resources
 from pathlib import Path
 from unittest import TestCase
@@ -76,14 +76,15 @@ class TestBase(TestCase):
         if self.with_debug_output():
             path = self.debug_dir() / path
             support.silent_make_dir(path.parent)
-            cv2.imwrite(str(path), img)
+            support.save_image(path, img)
 
     def dump_debug_matrix_by_hue(self, path, mat):
         if self.with_debug_output():
             path = self.debug_dir() / path
             support.silent_make_dir(path.parent)
             img = support.array_to_rgb_by_hue(mat)[:, :, ::-1]
-            cv2.imwrite(str(path), img)
+            img = np.uint8(img)
+            support.save_image(path, img)
 
     def tearDown(self):
         super().tearDown()

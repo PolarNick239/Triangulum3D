@@ -3,13 +3,13 @@
 # All rights reserved.
 #
 
-import cv2
 import ctypes
 import asyncio
 import logging
 import threading
 import contextlib
 import numpy as _np
+from PIL.Image import open as image_open
 from ctypes import byref
 from abc import ABCMeta, abstractmethod
 
@@ -26,11 +26,11 @@ from OpenGL.GL.VERSION.GL_1_1 import GL_UNPACK_ROW_LENGTH, GL_UNPACK_SKIP_ROWS, 
 from OpenGL.GL.VERSION.GL_1_1 import glBindTexture, glGenTextures, glDeleteTextures, glTexSubImage2D, GL_TEXTURE_1D, GL_TEXTURE_2D
 from OpenGL.GL.VERSION.GL_1_1 import GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER
 from OpenGL.GL.VERSION.GL_1_1 import GL_TEXTURE_WRAP_T, GL_TEXTURE_WRAP_S, GL_TEXTURE_BORDER_COLOR
-from OpenGL.GL.VERSION.GL_1_1 import GL_LINEAR, GL_NEAREST, GL_RGBA, GL_RGBA8, GL_RED, GL_UNSIGNED_SHORT, GL_R, GL_RGB
+from OpenGL.GL.VERSION.GL_1_1 import GL_LINEAR, GL_NEAREST, GL_RGB, GL_RGBA, GL_RGBA8, GL_RED, GL_UNSIGNED_SHORT, GL_R
 from OpenGL.GL.VERSION.GL_1_1 import GL_LINE_SMOOTH, GL_POINT_SMOOTH, GL_VIEWPORT
 from OpenGL.GL.VERSION.GL_1_1 import glClear, glClearColor, glClearDepth, GL_COLOR_BUFFER_BIT, GL_TRIANGLES, GL_LINES, GL_POINTS, GL_DEPTH_TEST, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT
 from OpenGL.GL.VERSION.GL_1_1 import glDrawElements, glDrawArrays, GL_TRIANGLE_FAN
-from OpenGL.GL.VERSION.GL_1_2 import glTexSubImage3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE, GL_BGR, GL_BGRA, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_BASE_LEVEL
+from OpenGL.GL.VERSION.GL_1_2 import glTexSubImage3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_BASE_LEVEL
 from OpenGL.GL.VERSION.GL_1_3 import glActiveTexture, GL_TEXTURE0, GL_CLAMP_TO_BORDER
 from OpenGL.GL.VERSION.GL_1_4 import GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32
 from OpenGL.GL.VERSION.GL_1_5 import glGenBuffers, glDeleteBuffers, glBindBuffer, glMapBuffer, glUnmapBuffer, GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER
@@ -292,7 +292,7 @@ def read_texture(texture, size, channels, gl_format, dtype):
 
 
 def read_color(texture, size):
-    return read_texture(texture, size, 4, GL_BGRA, _np.uint8)
+    return read_texture(texture, size, 4, GL_RGBA, _np.uint8)
 
 
 def read_depth(texture, size):
@@ -595,12 +595,12 @@ class Shader(_Bindable):
 
 
 def create_image_texture(filepath):
-    img = cv2.imread(filepath)
+    img = _np.array(image_open(filepath))
     assert img is not None
     h, w = img.shape[:2]
     texture = Texture2D()
     with texture:
         texture.set_params(LINEAR_LINEAR + CLAMP_TO_EDGE + NO_MIPMAPING + [(GL_TEXTURE_BORDER_COLOR, [0.0, 0.0, 0.0, 0.0])])
         with configure_pixel_store([(GL_UNPACK_ALIGNMENT, 1)]):
-            glTexImage2D(texture.target, 0, GL_RGBA, w, h, 0, {3: GL_BGR, 4: GL_BGRA}[img.shape[2]], GL_UNSIGNED_BYTE, img[::-1])
+            glTexImage2D(texture.target, 0, GL_RGBA, w, h, 0, {3: GL_RGB, 4: GL_RGBA}[img.shape[2]], GL_UNSIGNED_BYTE, img[::-1])
     return texture

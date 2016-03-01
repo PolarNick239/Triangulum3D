@@ -13,6 +13,7 @@ setup(
         'PyOpenGL>=3.1.0',
         'PyYAML>=3.11',
         'pyopencl>=2015.2.3',
+        'Pillow>=3.0.0',
     ],
     tests_require=[
         'testfixtures>=4.1.2',

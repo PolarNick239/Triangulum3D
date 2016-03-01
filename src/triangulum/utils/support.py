@@ -10,6 +10,7 @@ import numpy as np
 from pathlib import Path
 from itertools import chain
 from concurrent.futures import ThreadPoolExecutor
+from PIL.Image import fromarray as image_fromarray
 
 from triangulum.utils.colorsys_np import hsv_to_rgb
 
@@ -146,3 +147,13 @@ def array_to_rgb_by_hue(img):
     hsv = np.dstack([hue, saturation, value])
     rgb = hsv_to_rgb(hsv)
     return rgb
+
+
+def save_image(path, img):
+    image = image_fromarray(img)
+    if len(img.shape) == 3:
+        if img.shape[2] == 3:
+            image = image.convert('RGB')
+        if img.shape[2] == 4:
+            image = image.convert('RGBA')
+    image.save(str(path))

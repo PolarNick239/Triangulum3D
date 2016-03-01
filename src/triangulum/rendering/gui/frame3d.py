@@ -3,7 +3,6 @@
 # All rights reserved.
 #
 
-import cv2
 import asyncio
 import logging
 import numpy as np
@@ -182,8 +181,8 @@ class Frame3D:
 
         color_name, depth_name = filename + '.png', filename + '_depth.png'
         logger.info('Saving screenshot to {}, {}...'.format(color_name, depth_name))
-        yield from self._io_async_executor.map(cv2.imwrite, color_name, np.uint8(color))
-        yield from self._io_async_executor.map(cv2.imwrite, depth_name, support.array_to_grayscale(depth))
+        yield from self._io_async_executor.map(support.save_image, color_name, np.uint8(color))
+        yield from self._io_async_executor.map(support.save_image, depth_name, support.array_to_grayscale(depth))
 
         yield from renderer.release()
 
