@@ -63,5 +63,5 @@ class ReconstructionBuilderTest(TestBase):
             self.dump_debug_matrix_by_hue(subdir / 'distance.png', central_line_processor._debug_last_values['distance'])
             self.dump_debug_matrix_by_hue(subdir / 'is_maximum.png', central_line_processor._debug_last_values['is_maximum'])
 
-            ply.write_to_ply(self.debug_dir() / 'points.ply', points_3d)
+            ply.write_ply(self.debug_dir() / 'points.ply', points_3d)
         # TODO: implement result check
