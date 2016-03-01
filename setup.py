@@ -18,8 +18,5 @@ setup(
         'testfixtures>=4.1.2',
         'nose>=1.3.4'
     ],
-    scripts=[
-        "monocerosd.py",
-    ],
     test_suite='nose.collector',
 )
