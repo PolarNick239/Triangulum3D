@@ -67,8 +67,7 @@ __kernel void nearest_edge_iter(__global const int * type,
     for (int dx = -1; dx <= 1; dx++) {
         for (int dy = -1; dy <= 1; dy++) {
             if (type(x + dx, y + dy) == this_type) {
-                min_distance = min(min_distance, 1.0f + distance(x + dx, y + dy));
-                // TODO: try not 1.0f+, but length(dx, dy)+
+                min_distance = min(min_distance, length((float2) (dx, dy)) + distance(x + dx, y + dy));
             }
         }
     }
