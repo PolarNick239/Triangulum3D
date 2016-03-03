@@ -22,6 +22,7 @@ from triangulum.rendering.gl import RenderingAsyncExecutor
 from triangulum.rendering.gui.utils.double_click import DoubleClickHandler
 from triangulum.rendering.gui.utils.fps_limiter import FPSLimiter
 from triangulum.rendering.renderers.simple_renderer import SimpleRenderer, ImageRenderer
+from triangulum.utils import ply
 from triangulum.utils import math
 from triangulum.utils import aabb
 from triangulum.utils import support
@@ -300,12 +301,21 @@ if __name__ == '__main__':
                    course=-20, roll=45)
         box2 = Box(xs=[0.2, 0.5], ys=[0.0, -0.3], zs=[0.1, 0.4],
                    course=15, pitch=10)
-        texture = asyncio.get_event_loop().run_until_complete(frame._gl_executor.map(gl.create_image_texture, 'data/dog.jpg'))
+        texture = asyncio.get_event_loop().run_until_complete(frame._gl_executor.map(gl.create_image_texture, 'tests/triangulum_test/resources/data/dog.jpg'))
+        bunny = ply.read_ply('tests/triangulum_test/resources/scenes/bunny/bunny.ply')
         dog_mesh.set_texture(texture)
+
+        def move_bunny(ps):
+            world_pos = np.array([0.5, -0.2, 0.0])
+            ps[:, 0] += world_pos[0]
+            ps[:, [0, 1, 2]] = ps[:, [0, 2, 1]]
+            ps = world_pos + (ps - world_pos) * 4
+            return ps
 
         frame.add_points_cloud(dog_mesh)
         frame.add_points_cloud(box1)
         frame.add_points_cloud(box2)
+        frame.add_points_cloud(PointsCloud(move_bunny(bunny['xyz'].copy()), faces=bunny['face']))
         projector = StripesProjector()
         frame.scene.set_projector(projector)
 

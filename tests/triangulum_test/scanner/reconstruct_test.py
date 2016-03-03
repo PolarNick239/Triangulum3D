@@ -4,10 +4,13 @@
 #
 
 import asyncio
+import unittest
 from pathlib import Path
 
+from triangulum.rendering.entities.points_cloud import PointsCloud
 from triangulum.utils import ply
 from triangulum.utils import support
+from triangulum_test import test_support
 from triangulum_test.test_support import TestBase
 from triangulum.rendering.entities.box import Box
 from triangulum.rendering.entities.scene import Scene
@@ -35,26 +38,45 @@ class ReconstructionBuilderTest(TestBase):
         scene = Scene()
         scene.add_renderable(Box([-1, 1], [-0.5, 0.5], [0, 1]))
         camera = Camera(course=40)
+        projector = StripesProjector(course=70)
         viewport = (500, 300)
         projector_lods = 8
-        
-        self.reconstruction_case('box', scene, camera, viewport, projector_lods)
 
-    def reconstruction_case(self, scene_name, scene, camera, viewport, projector_lods):
+        self.reconstruction_case('box', scene, camera, projector, viewport, projector_lods)
+
+    @unittest.skip("Too slow because of bottle-neck in ReconstructionBuilder.build_point_cloud(...)")
+    def bunny_test(self):
+        bunny = ply.read_ply(test_support.resources_dir_path / 'scenes' / 'bunny' / 'bunny.ply')
+
+        def transform_bunny(ps):
+            world_pos = [0.5, -0.2, 0.0]
+            ps[:, 0] += world_pos[0]
+            ps[:, [0, 1, 2]] = ps[:, [0, 2, 1]]
+            ps = world_pos + (ps - world_pos) * 4
+            return ps
+
+        scene = Scene()
+        scene.add_renderable(PointsCloud(transform_bunny(bunny['xyz']).copy(), faces=bunny['face']))
+        camera = Camera(course=-120)
+        projector = StripesProjector()
+        viewport = (5616, 3744)
+        projector_lods = 10
+        self.reconstruction_case('bunny', scene, camera, projector, viewport, projector_lods)
+
+    def reconstruction_case(self, scene_name, scene, camera, projector, viewport, projector_lods):
         color, depth = self.render(scene, camera, viewport)
         self.dump_debug_img(Path(scene_name) / "scene_color.png", color)
         self.dump_debug_img(Path(scene_name) / "scene_depth.png", support.array_to_grayscale(depth))
 
         central_line_processor = CentralLineExtractionProcessor(debug_enabled=self.with_debug_output())
         reconstructor = ReconstructionBuilder(line_extraction_processor=central_line_processor)
-        projector = StripesProjector(course=70)
         self.register_releasable(projector)
         for i in range(projector_lods):
             projector.stripes_number = 2 ** i
             scene.set_projector(projector)
 
             color, depth = self.render(scene, camera, viewport)
-            self.dump_debug_img("{}_color.png".format(i), color)
+            self.dump_debug_img(Path(scene_name) / "{}_color.png".format(i), color)
 
             reconstructor.process_observation(i, color)
 
