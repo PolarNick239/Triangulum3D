@@ -40,11 +40,22 @@ def homogenize(a, w=1.0):
 
 
 def homo_translate(matrix, points):
-    points = np.atleast_2d(points)
+    points = np.array(points)
+    points_list = np.atleast_2d(points)
+    if points_list.shape != points.shape:
+        single_input = True
+    else:
+        single_input = False
+
+    points = points_list
     if points.shape[-1] < matrix.shape[1]:
         points = homogenize(points)
     p = np.dot(points, matrix.T)
-    return p[:, :-1] / p[:, -1, np.newaxis]
+    p = p[:, :-1] / p[:, -1, np.newaxis]
+    if single_input:
+        return p[0]
+    else:
+        return p
 
 
 def scale_matrix(s, d=2):

@@ -145,7 +145,7 @@ class Frame3D:
         xyz = np.hstack([xy, z]) * 2.0 - 1.0
 
         mvp_mtx = self._camera.get_mvp_matrix()
-        xyz = math.homo_translate(np.linalg.inv(mvp_mtx), xyz)[0]
+        xyz = math.homo_translate(np.linalg.inv(mvp_mtx), xyz)
         return xyz
 
     def _print_cursor_position(self):
