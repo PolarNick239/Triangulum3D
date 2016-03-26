@@ -9,6 +9,7 @@ import pyopencl as cl
 import pyopencl.array
 from pathlib import Path
 
+from triangulum.utils import support
 from triangulum.utils.cl import create_context
 
 
@@ -17,10 +18,8 @@ class CentralLineExtractionProcessor:
      The main idea is to calculate distance to stripe border,
      than apply non-maximum suppression on distance image (like in Canny edge detector)."""
 
-    def __init__(self, cl_context: cl.Context = None, kernels_cache_dir=None,
-                 debug_enabled=False):
+    def __init__(self, cl_context: cl.Context = None, debug_enabled=False):
         self._context = cl_context
-        self._kernels_cache_dir = kernels_cache_dir
 
         self._kernel_source = None
         self._compiled_params = None
@@ -29,23 +28,14 @@ class CentralLineExtractionProcessor:
                                    'distance': None,
                                    'is_maximum': None} if debug_enabled else None
 
-    def _load_kernel_source(self):
-        if self._kernel_source is not None:
-            return
-        kernel_path = Path(pkg_resources.get_provider('triangulum.scanner')
-                           .get_resource_filename(__name__, 'central_line_extraction.cl'))
-        with kernel_path.open() as f:
-            self._kernel_source = ''.join(f.readlines())
-
     def _compile(self, w, h):
         if self._compiled_params == (w, h):
             return
 
-        self._load_kernel_source()
+        self._kernel_source = self._kernel_source or support.load_kernel('triangulum.scanner', 'central_line_extraction')
         self._context = self._context or create_context()
         self._program = cl.Program(self._context, self._kernel_source).build(
-                options=['-D W={}'.format(w), '-D H={}'.format(h)],
-                cache_dir=self._kernels_cache_dir)
+                options=['-D W={}'.format(w), '-D H={}'.format(h)])
         self._compiled_params = (w, h)
 
     def process(self, class_img, no_class=np.iinfo(np.int32).min):

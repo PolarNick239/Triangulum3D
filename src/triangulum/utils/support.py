@@ -5,13 +5,13 @@
 
 import asyncio
 import logging
-
 import numpy as np
+import pkg_resources
 from pathlib import Path
 from itertools import chain
-from concurrent.futures import ThreadPoolExecutor
 from PIL.Image import open as image_open
 from PIL.Image import fromarray as image_fromarray
+from concurrent.futures import ThreadPoolExecutor
 
 from triangulum.utils.colorsys_np import hsv_to_rgb
 
@@ -162,3 +162,11 @@ def save_image(path, img):
         if img.shape[2] == 4:
             image = image.convert('RGBA')
     image.save(str(path))
+
+
+def load_kernel(package, kernel_name):
+    kernel_path = Path(pkg_resources.get_provider(package)
+                       .get_resource_filename(__name__, '{}.cl'.format(kernel_name)))
+    with kernel_path.open() as f:
+        kernel_source = ''.join(f.readlines())
+    return kernel_source
