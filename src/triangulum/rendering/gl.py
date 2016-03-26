@@ -9,7 +9,6 @@ import logging
 import threading
 import contextlib
 import numpy as _np
-from PIL.Image import open as image_open
 from ctypes import byref
 from abc import ABCMeta, abstractmethod
 
@@ -57,7 +56,7 @@ from OpenGL.GL.VERSION.GL_4_2 import glTexStorage2D, glTexStorage3D
 from OpenGL.GL.EXT.direct_state_access import glNamedBufferDataEXT
 from OpenGL.GL.ARB.pixel_buffer_object import GL_PIXEL_UNPACK_BUFFER_ARB
 
-from triangulum.utils.support import AsyncExecutor
+from triangulum.utils.support import AsyncExecutor, load_image
 from triangulum.rendering.context.gl_context import GLContext
 
 
@@ -595,7 +594,7 @@ class Shader(_Bindable):
 
 
 def create_image_texture(filepath):
-    img = _np.array(image_open(filepath))
+    img = _np.array(load_image(filepath))
     assert img is not None
     h, w = img.shape[:2]
     texture = Texture2D()

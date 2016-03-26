@@ -10,6 +10,7 @@ import numpy as np
 from pathlib import Path
 from itertools import chain
 from concurrent.futures import ThreadPoolExecutor
+from PIL.Image import open as image_open
 from PIL.Image import fromarray as image_fromarray
 
 from triangulum.utils.colorsys_np import hsv_to_rgb
@@ -147,6 +148,10 @@ def array_to_rgb_by_hue(img):
     hsv = np.dstack([hue, saturation, value])
     rgb = hsv_to_rgb(hsv)
     return rgb
+
+
+def load_image(path):
+    return image_open(str(path))
 
 
 def save_image(path, img):
