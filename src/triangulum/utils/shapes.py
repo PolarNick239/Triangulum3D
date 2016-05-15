@@ -28,7 +28,8 @@ class Ellipse(collections.namedtuple('Ellipse',
     angle - angle of ellipse in degrees
     """
 
-    def draw(self, img, color):
+    def draw(self, img, color, *,
+             fill=False):
         angle = 0
         angle_step = 180 / 10
         prev_xy = None
@@ -42,6 +43,7 @@ class Ellipse(collections.namedtuple('Ellipse',
         def dist_from_prev(cur_xy):
             return np.abs(cur_xy - prev_xy).max()
 
+        xys = []
         while angle < 360:
             if prev_xy is None:
                 xy = calc_xy(angle)
@@ -58,3 +60,18 @@ class Ellipse(collections.namedtuple('Ellipse',
 
             draw_pixels(img, xy, color)
             prev_xy = xy
+            xys.append(xy)
+
+        if fill:
+            xys = map(tuple, xys)
+            xys = sorted(xys)
+
+            cur_index = 0
+            while cur_index < len(xys):
+                cur_x, min_y = xys[cur_index]
+                while cur_index + 1 < len(xys) and cur_x == xys[cur_index + 1][0]:
+                    cur_index = cur_index + 1
+                for y in range(min_y, xys[cur_index][1] + 1):
+                    draw_pixels(img, (cur_x, y), color)
+                cur_index = cur_index + 1
+        return img

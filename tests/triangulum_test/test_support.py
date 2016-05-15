@@ -53,6 +53,8 @@ class TestBase(TestCase):
         self.gl_executor = None
         self.releasables = []
 
+        support.silent_make_dir(self.debug_dir())
+
     def get_gl_executor(self):
         if self.gl_executor is None:
             self.gl_executor = RenderingAsyncExecutor()

@@ -6,6 +6,16 @@
 import numpy as np
 
 
+def rgb_to_grayscale(rgb):
+    """
+    >>> rgb_to_grayscale([[[100, 200, 300]]])
+    array([[ 181.]], dtype=float32)
+    >>> rgb_to_grayscale([[[100, 100, 100]]])
+    array([[ 100.]], dtype=float32)
+    """
+    return np.float32(np.sum(np.float32(rgb) * [[[0.3, 0.59, 0.11]]], axis=-1))
+
+
 def rgb_to_hsv(rgb):
     """
     >>> from colorsys import rgb_to_hsv as rgb_to_hsv_single

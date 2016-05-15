@@ -9,11 +9,13 @@ import numpy as np
 import pkg_resources
 from pathlib import Path
 from itertools import chain
+
+import shutil
 from PIL.Image import open as image_open
 from PIL.Image import fromarray as image_fromarray
 from concurrent.futures import ThreadPoolExecutor
 
-from triangulum.utils.colorsys_np import hsv_to_rgb
+from triangulum.utils.colors import hsv_to_rgb
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +113,10 @@ def wrap_exc(coro_or_future, logger_for_error=None, future_description: str=None
     return future
 
 
+def silent_rm_dir(path: Path):
+    shutil.rmtree(str(path), ignore_errors=True)
+
+
 def silent_make_dir(path: Path):
     try:
         path.mkdir(parents=True)  # TODO: migrate to python3.5 (it has exist_ok param)
@@ -170,3 +176,9 @@ def load_kernel(package, kernel_name):
     with kernel_path.open() as f:
         kernel_source = ''.join(f.readlines())
     return kernel_source
+
+
+def iter_percentage(iterable):
+    xs = list(iterable)
+    for i, x in enumerate(xs):
+        yield i * 100 // len(xs), x

@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+from Cython.Build import cythonize
 
 setup(
     name='Triangulum3D',
@@ -15,6 +16,7 @@ setup(
         'pyopencl>=2015.2.3',
         'Pillow>=3.0.0',
     ],
+    ext_modules=cythonize("**/*.pyx"),
     tests_require=[
         'testfixtures>=4.1.2',
         'nose>=1.3.4'
