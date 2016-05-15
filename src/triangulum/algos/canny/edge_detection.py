@@ -85,7 +85,7 @@ class EdgeDetectionProcessor:
         edge_strength[np.logical_and(is_extremum, intensity_dxy_norm >= weak_threshold)] = 1
         edge_strength[np.logical_and(is_extremum, intensity_dxy_norm >= strong_threshold)] = 2
 
-        is_edge = propagate_strong_edges(edge_strength) == 1
+        is_edge = np.uint8(propagate_strong_edges(edge_strength) == 1)
 
         self._save_debug_value('gaussed_grayscale', lambda: gaussed_img_cl.get())
         self._save_debug_value('intensity_dx', lambda: intensity_dxy_cl.get()['x'])

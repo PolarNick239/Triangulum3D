@@ -34,7 +34,7 @@ class EdgeDetectionProcessorTest(TestBase):
         self.dump_debug_img(Path(case_name) / '7_weak_edges.png', np.uint8(self.processor._debug_last_values['weak_edges']) * 255)
         self.dump_debug_img(Path(case_name) / '8_strong_edges.png', np.uint8(self.processor._debug_last_values['strong_edges']) * 255)
 
-        self.dump_debug_img(Path(case_name) / '9_edges.png', np.uint8(edges)*255)
+        self.dump_debug_img(Path(case_name) / '9_edges.png', edges * 255)
         return edges
 
     def lena_test(self):

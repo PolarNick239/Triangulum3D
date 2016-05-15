@@ -7,7 +7,8 @@ setup(
     packages=find_packages('src'),
     package_dir={'': 'src'},
     setup_requires=[
-        'setuptools >= 18.0'
+        'setuptools>=18.0',
+        'Cython>=0.24',
     ],
     install_requires=[
         'numpy>=1.9.1',
@@ -15,6 +16,7 @@ setup(
         'PyYAML>=3.11',
         'pyopencl>=2015.2.3',
         'Pillow>=3.0.0',
+        'Cython>=0.24',
     ],
     ext_modules=cythonize("**/*.pyx"),
     tests_require=[
