@@ -28,17 +28,19 @@ class Ellipse(collections.namedtuple('Ellipse',
     angle - angle of ellipse in degrees
     """
 
+    def calculate_point(self, inner_angle):
+        xy = self.a * np.cos(np.deg2rad(inner_angle)), self.b * np.sin(np.deg2rad(inner_angle))
+        xy = math.homo_translate(math.rotate_matrix2d(np.deg2rad(self.angle)), xy)
+        xy = np.array([self.x, self.y]) + xy
+        return xy
+
     def draw(self, img, color, *,
              fill=False):
         angle = 0
         angle_step = 180 / 10
         prev_xy = None
 
-        def calc_xy(cur_angle):
-            xy = self.a * np.cos(np.deg2rad(cur_angle)), self.b * np.sin(np.deg2rad(cur_angle))
-            xy = math.homo_translate(math.rotate_matrix2d(np.deg2rad(self.angle)), xy)
-            xy = np.array([self.x, self.y]) + xy
-            return np.int32(xy)
+        calc_xy = lambda inner_angle: np.int32(np.round(self.calculate_point(inner_angle)))
 
         def dist_from_prev(cur_xy):
             return np.abs(cur_xy - prev_xy).max()
