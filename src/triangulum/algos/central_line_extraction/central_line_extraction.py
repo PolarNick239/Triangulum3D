@@ -4,17 +4,15 @@
 #
 
 import numpy as np
-import pkg_resources
 import pyopencl as cl
 import pyopencl.array
-from pathlib import Path
 
 from triangulum.utils import support
 from triangulum.utils.cl import create_context
 
 
 class CentralLineExtractionProcessor:
-    """ This is OpenCL implemetation for central line extraction from multiple stripes.
+    """ This is OpenCL implementation for central line extraction from multiple stripes.
      The main idea is to calculate distance to stripe border,
      than apply non-maximum suppression on distance image (like in Canny edge detector)."""
 
@@ -32,7 +30,8 @@ class CentralLineExtractionProcessor:
         if self._compiled_params == (w, h):
             return
 
-        self._kernel_source = self._kernel_source or support.load_kernel('triangulum.scanner', 'central_line_extraction')
+        self._kernel_source = self._kernel_source or support.load_kernel('triangulum.algos.central_line_extraction',
+                                                                         'central_line_extraction')
         self._context = self._context or create_context()
         self._program = cl.Program(self._context, self._kernel_source).build(
                 options=['-D W={}'.format(w), '-D H={}'.format(h)])
@@ -71,22 +70,10 @@ class CentralLineExtractionProcessor:
         if self._debug_last_values is not None:
             self._debug_last_values['is_edge_pixel'] = is_edge_pixel_cl.get()[1:-1, 1:-1]
 
-        sobel_dx = np.array([[-1, 0, 1],
-                             [-2, 0, 2],
-                             [-1, 0, 1]], np.float32)
-        sobel_dy = sobel_dx.T
-        sobel_kernel = np.dstack([sobel_dx, sobel_dy])
-        sobel_kernel = sobel_kernel.view(
-                np.dtype([(('x', 's0'), '<f4'), (('y', 's1'), '<f4')])
-        ).reshape(3, 3)
-
-        sobel_kernel_cl = cl.array.zeros(queue, sobel_kernel.shape, cl.array.vec.float2)
-        sobel_kernel_cl.set(sobel_kernel)
-
         distance_dxy_cl = cl.array.zeros(queue, distance_cl.shape, cl.array.vec.float2)
-        self._program.convolve(queue, (w - 2, h - 2), None,
-                               distance_cl.data, sobel_kernel_cl.data, distance_dxy_cl.data,
-                               global_offset=(2, 2))
+        self._program.convolve_sobel(queue, (w - 2, h - 2), None,
+                                     distance_cl.data, distance_dxy_cl.data,
+                                     global_offset=(2, 2))
 
         if self._debug_last_values is not None:
             self._debug_last_values['distance'] = distance_cl.get()[1:-1, 1:-1]

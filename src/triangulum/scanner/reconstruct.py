@@ -6,9 +6,9 @@
 import logging
 import numpy as np
 
-from triangulum.utils import math
+from triangulum.algos.central_line_extraction.central_line_extraction import CentralLineExtractionProcessor
 from triangulum.rendering.entities.camera import Camera
-from triangulum.scanner.central_line_extraction import CentralLineExtractionProcessor
+from triangulum.utils import math
 
 logger = logging.getLogger(__name__)
 

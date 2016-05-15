@@ -7,7 +7,6 @@ import asyncio
 import unittest
 from pathlib import Path
 
-from triangulum.rendering.entities.points_cloud import PointsCloud
 from triangulum.utils import ply
 from triangulum.utils import support
 from triangulum_test import test_support
@@ -16,9 +15,10 @@ from triangulum.rendering.entities.box import Box
 from triangulum.rendering.entities.scene import Scene
 from triangulum.rendering.entities.camera import Camera
 from triangulum.scanner.reconstruct import ReconstructionBuilder
+from triangulum.rendering.entities.points_cloud import PointsCloud
 from triangulum.rendering.renderers.simple_renderer import ImageRenderer
 from triangulum.rendering.entities.stripes_projector import StripesProjector
-from triangulum.scanner.central_line_extraction import CentralLineExtractionProcessor
+from triangulum.algos.central_line_extraction.central_line_extraction import CentralLineExtractionProcessor
 
 
 class ReconstructionBuilderTest(TestBase):

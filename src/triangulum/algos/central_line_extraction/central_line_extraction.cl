@@ -79,36 +79,41 @@ __kernel void nearest_edge_iter(__global const int * type,
 }
 
 
+/*
+    Sobel operator dx:
+        -1, 0, 1
+        -2, 0, 2
+        -1, 0, 1
+*/
+__constant float2 sobel_kernel[3*3] = {(float2) (-1.0/8.0, -1.0/8.0), (float2) (0.0, -2.0/8.0), (float2) (1.0/8.0, -1.0/8.0),
+                                       (float2) (-2.0/8.0, 0.0),      (float2) (0.0, 0.0),      (float2) (2.0/8.0,  0.0),
+                                       (float2) (-1.0/8.0, 1.0/8.0),  (float2) (0.0, 2.0/8.0),  (float2) (1.0/8.0,  1.0/8.0),
+};
+#define sobel_kernel(x, y) sobel_kernel[(y + 1) * 3 + x + 1]
 #define u(x, y) u[(y) * W + x]
-#define kern(x, y) kern[(y) * 3 + x]
 #define res(x, y) res[(y) * W + x]
 
 // To convolve with Sobel operator
-__kernel void convolve(__global const float  * u,
-                       __global const float2 * kern,  // TODO: make it local
-                       __global       float2 * res) {
+__kernel void convolve_sobel(__global const float  * u,
+                             __global       float2 * res) {
     int x = (int) get_global_id(0);
     int y = (int) get_global_id(1);
 
-    float2 sum = 0;
-    float2 kernelSum = 0;
+    res(x, y) = 0;
 
     for (int dx = -1; dx <= 1; dx++) {
         for (int dy = -1; dy <= 1; dy++) {
-            sum += u(x + dx, y + dy) * kern(1 + dx, 1 + dy);
-            kernelSum += fabs(kern(1 + dx, 1 + dy));
+            res(x, y) += u(x + dx, y + dy) * sobel_kernel(dx, dy);
         }
     }
-
-    res(x, y) = sum / kernelSum;
 }
 
 
 #define du(x, y) du[(y) * W + x]
 #define is_maximum(x, y) is_maximum[(y) * W + x]
 
-__constant int2 dxys[8] = {(int2) (1, 0), (int2) (1, 1), (int2) (0, 1), (int2) (-1, 1),
-                           (int2) (-1, 0), (int2) (-1, -1), (int2) (0, -1), (int2) (1, -1)};
+__constant int2 dxys[8] = {(int2)  (1, 0),  (int2)  (1,  1),    (int2) (0,  1), (int2) (-1,  1),
+                           (int2) (-1, 0),  (int2) (-1, -1),    (int2) (0, -1), (int2) ( 1, -1)};
 
 // Implemented like any non maximum supression (see Canny edge detector)
 __kernel void non_maximum_suppression(__global const int    * u,
