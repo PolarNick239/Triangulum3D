@@ -4,6 +4,7 @@
 #
 
 import asyncio
+import numpy as np
 
 from triangulum.rendering import gl
 from triangulum.rendering.entities.scene import Scene
@@ -12,18 +13,24 @@ from triangulum.rendering.entities.camera import Camera
 
 class SimpleRenderer:
 
-    def __init__(self, gl_executor: gl.RenderingAsyncExecutor=None):
+    def __init__(self, gl_executor: gl.RenderingAsyncExecutor=None, *,
+                 background_colour=(1.0, 1.0, 1.0)):
         self._gl_executor = gl_executor or gl.RenderingAsyncExecutor()
+
+        if len(background_colour) < 4:
+            background_colour = np.hstack([background_colour, 1.0])
+        assert len(background_colour) == 4
+
+        self._background_colour = np.float32(background_colour)
 
     @asyncio.coroutine
     def init(self):
         yield from self._gl_executor.init_gl_context()
 
-    @staticmethod
-    def _render(scene: Scene, camera: Camera):
+    def _render(self, scene: Scene, camera: Camera):
         if scene.projector is not None:
             scene.projector.render_shadow(scene)
-        gl.clear_viewport()
+        gl.clear_viewport(self._background_colour)
         scene.render(camera)
         gl.glFinish()
 
@@ -34,7 +41,8 @@ class SimpleRenderer:
 
 class ImageRenderer:
 
-    def __init__(self, gl_executor: gl.RenderingAsyncExecutor):
+    def __init__(self, gl_executor: gl.RenderingAsyncExecutor, *,
+                 background_colour=(1.0, 1.0, 1.0)):
         self._gl_executor = gl_executor or gl.RenderingAsyncExecutor()
 
         self._framebuffer = None
@@ -42,6 +50,12 @@ class ImageRenderer:
         self._depth_buffer = None
 
         self._initialized_wh = None
+
+        if len(background_colour) < 4:
+            background_colour = np.hstack([background_colour, 1.0])
+        assert len(background_colour) == 4
+
+        self._background_colour = map(np.float32, background_colour)
 
     @asyncio.coroutine
     def _update_resources(self, viewport_size_wh):
@@ -62,7 +76,7 @@ class ImageRenderer:
         with gl.render_to_texture(self._framebuffer,
                                   color=self._color_buffer, depth=self._depth_buffer,
                                   viewport_size=viewport_size_wh):
-            gl.clear_viewport()
+            gl.clear_viewport(self._background_colour)
             scene.render(camera)
             gl.glFinish()
             depth = gl.read_depth(self._depth_buffer, viewport_size_wh)

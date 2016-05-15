@@ -358,8 +358,8 @@ def render_to_texture(framebuffer, color=None, depth=None, viewport_size=None):
             glViewport(*old_viewport_xywh)
 
 
-def clear_viewport():
-    glClearColor(0.0, 0.0, 0.0, 1.0)
+def clear_viewport(background_color=(0.0, 0.0, 0.0, 1.0)):
+    glClearColor(*background_color)
     glEnable(GL_DEPTH_TEST)
     glClearDepth(1.0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
