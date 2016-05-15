@@ -43,8 +43,9 @@ def _ellipse_axis_length(a):
     return np.array([res1, res2])
 
 
-def fit_ellipse(xys):
+def _deprecated_fit_ellipse(xys):
     assert len(xys) >= 5
+    xys = np.float64(xys)
     x, y = xys[:, 0], xys[:, 1]
     x_mean = x.mean()
     y_mean = y.mean()
@@ -58,4 +59,28 @@ def fit_ellipse(xys):
     axes = _ellipse_axis_length(a)
     x += x_mean
     y += y_mean
-    return Ellipse(center[0], center[1], axes[0], axes[1], np.rad2deg(phi))
+    ellipse = Ellipse(center[0], center[1], axes[0], axes[1], np.rad2deg(phi))
+    if np.any(np.isnan(np.float32(ellipse))):
+        return None
+    else:
+        return ellipse
+
+
+import b2ac.preprocess
+import b2ac.fit
+import b2ac.conversion
+
+
+def fit_ellipse(xys):
+    xys, x_mean, y_mean = b2ac.preprocess.remove_mean_values(xys)
+
+    conic = b2ac.fit.fit_improved_B2AC_double(xys)
+
+    general_form = b2ac.conversion.conic_to_general_1(conic)
+    general_form[0][0] += x_mean
+    general_form[0][1] += y_mean
+
+    ellipse = Ellipse(general_form[0][0], general_form[0][1], general_form[1][0], general_form[1][1], np.rad2deg(general_form[2]))
+    if ellipse.a < ellipse.b:
+        ellipse = Ellipse(ellipse.x, ellipse.y, ellipse.b, ellipse.a, ellipse.angle + 90)
+    return ellipse

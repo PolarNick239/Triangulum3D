@@ -17,7 +17,12 @@ setup(
         'pyopencl>=2015.2.3',
         'Pillow>=3.0.0',
         'Cython>=0.24',
+        'b2ac>=0.2.1',
     ],
+
+    # TODO: actualize, when pip will support alternative (direct dependencies, see https://github.com/pypa/pip/issues/2023 )
+    dependency_links=['https://github.com/PolarNick239/b2ac/tarball/master#egg=b2ac-0.2.1'],
+
     ext_modules=cythonize("**/*.pyx"),
     tests_require=[
         'testfixtures>=4.1.2',
